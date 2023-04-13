@@ -69,22 +69,83 @@ def update():
 @app.route('/sheetstats', methods=['GET'])
 @cross_origin()
 def getsheet():
-    sheet_id ="1kAJU_RGLNfEAkM1E1Zw909iBDDfKJYblH9o2aWpM9lo" #--> use this specific sheet for now, later will have link parameter
+
+    response_data = request.args
+    sheet_id = get_sheets_id(response_data.get("link"))
+
+
+    #sheet_id ="1kAJU_RGLNfEAkM1E1Zw909iBDDfKJYblH9o2aWpM9lo" # UNCOMMENT THIS IF YOU WANT TO TEST ON OUR TESTING SPREADSHEET
     range_name = 'Sheet1!A:D'
     response = service.spreadsheets().values().get(
         spreadsheetId=sheet_id,
         range=range_name
     ).execute()
 
+
     #get sheet values
     values = response.get('values', []) #values is a list of all the rows [values in row1, values in row2, values in row3, etc...]
+    #values[0] is the FIRST ROW
+    #values[0][0] is the NAME of the FIRST ROW
+    #values[i][0]  all the names
+    # [amanda, an, derrick]
+    total_agreement = 0
+
+    setthing = set() #all the file names
+    filedictionary = {}
+
+    for i in values:
+        setthing.add(i[1]) #--> all names
+
+    total_images = len(setthing)
+    images_with_total_agreement = []
+    #setthing becomes set of all file names
+
+    for i in setthing:
+        filedictionary[i] = []
+       
+    for row in values:
+        filedictionary[row[1]].append(row[2])
+
+    for key, value in filedictionary.items():
+        if len(set(value)) == 1:
+            total_agreement+=1
+            images_with_total_agreement.append(key)
+
+
+    jsonreturn = {
+        "agreement_percentage" : (total_agreement/total_images)*100 ,
+        "total_agreement_images": images_with_total_agreement
+
+    }
+
+
 
     
-    for i in values:
-        print(i)
-    
-    
-    return values
+  #  [name, file_name, tags_array,file_num]
+    #total_annotator_agreement --> what % of people agree on tags 
+    #total agreement (amount of images ALL annotators got right) / all images
+    #anarray = [] --> all my annotations
+    #amandaarray = [] all annotations
+    #derrickarray = [] all anotations
+
+
+
+    #most_disagreed_upon_image
+    #images with 0 agreements
+
+    #most_agreed_upon_image
+    #
+
+
+    return jsonreturn
+
+
+
+
+
+
+
+
 
 
 

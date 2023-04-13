@@ -72,6 +72,7 @@ def getsheet():
 
     response_data = request.args
     sheet_id = get_sheets_id(response_data.get("link"))
+    tags_used = response_data.get("tags_used")
 
 
     #sheet_id ="1kAJU_RGLNfEAkM1E1Zw909iBDDfKJYblH9o2aWpM9lo" # UNCOMMENT THIS IF YOU WANT TO TEST ON OUR TESTING SPREADSHEET
@@ -113,6 +114,7 @@ def getsheet():
 
 
     jsonreturn = {
+        "tags_used" :tags_used,
         "agreement_percentage" : (total_agreement/total_images)*100 ,
         "total_agreement_images": images_with_total_agreement
 

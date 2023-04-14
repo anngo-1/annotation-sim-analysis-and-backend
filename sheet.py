@@ -2,7 +2,6 @@ from google.oauth2 import service_account
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
 from googleapiclient.discovery import build
-import numpy as np
 import json
 import re
 
@@ -65,6 +64,7 @@ def update():
 
 
 
+
 #ANALYZE SPREADSHEET DATA!!!!!
 @app.route('/sheetstats', methods=['GET'])
 @cross_origin()
@@ -79,13 +79,23 @@ def getsheet():
     #get sheet values
     values = response.get('values', []) #values is a list of all the rows [values in row1, values in row2, values in row3, etc...]
 
+    '''
+    Here is the general format on how the data is sorted. They are all dictionaries.
+    FILES = {
+        [image_name] = {
+            [attribute_name] = number_of_selection (The amount of people who chose this tag)
+        }
+        
+        ...
+    }
+    '''
     
     people = set()
     all_attribute = set()
     files = dict()
     
     for i in values:
-        # Define items
+        # Define the items present in each value in the data.
         person = i[0]
         file_name = i[1]
         tag_array = i[2]
@@ -93,14 +103,18 @@ def getsheet():
         # Add person to the set
         people.add(person)
         
+        # Create empty dictionary to hold future tag attributes if the attribute hasn't been marked yet.
         if not file_name in files:
             files[file_name] = dict()
         
         # Go through each attribute
         file_attributes = files[file_name]
         
+        # Convert the JSON tag string into an array. (Using regex to seperate the quotation marks "".)
         tag_list = re.findall(r'"(.*?)"', tag_array)
-            
+        
+        # Go through the attribute in each of the converted taglist and add an attribute if it doesn't already exist.
+        # Add the count
         for attribute in tag_list:
             if not attribute in file_attributes:
                 file_attributes[attribute] = 0
@@ -109,28 +123,28 @@ def getsheet():
             file_attributes[attribute] += 1
             
             
-
-
-    #output arrays/variables
-    total_agreement_count = 0
-    for key, value in files.items():
-        if np.unique(list(value.values())).size == 1: #if there is TOTAL annotator agremeent
-            total_agreement_count+=1
+    # DATA ANALYSIS TIME
+    '''
+    The Data Needed Are As Follows
+    Annotator Agreement For Each Attribute
+    '''
+    json_data = dict()
+    total_percentage = 0 # Keep track of the total percentage
+    for img_name, attribute_dict in files.items():
+         # Go through each attribute to receive the percentage by dividing the number of selections over the total number of people.
+         for attribute_name, total_count in attribute_dict.items():
+             percent_selected = str((total_count / len(people)) * 100)
+             json_data[img_name] = percent_selected
+             
+             # Add to the total percentage
+             total_percentage += percent_selected
+                
     
-
-    jsonreturn = {
-        "TOTAL_annotator_agreement": total_agreement_count/len(files)
-    }
-            
-        
-        
-        
-    
+    # Calculate the average
+    json_data['average_agreement'] = str(total_percentage / 100)
     print(files)
     print(all_attribute)
-    print(total_agreement_count)
-    print(len(files))
-    return jsonreturn
+    return json_data
 
 
 

@@ -73,11 +73,11 @@ def update():
 def getsheet():
 
     response_data = request.args
-    #sheet_id = get_sheets_id(response_data.get("link"))
+    sheet_id = get_sheets_id(response_data.get("link"))
     tags_used = response_data.get("tags_used")
 
 
-    sheet_id ="1-eveLZg1SCz2aMkvtxKCTyq1UdAfPglQ0foM1XL9o60" # UNCOMMENT THIS IF YOU WANT TO TEST ON OUR TESTING SPREADSHEET
+    # sheet_id ="1-eveLZg1SCz2aMkvtxKCTyq1UdAfPglQ0foM1XL9o60" # UNCOMMENT THIS IF YOU WANT TO TEST ON OUR TESTING SPREADSHEET
     range_name = 'Sheet1!A:D'
     response = service.spreadsheets().values().get(
         spreadsheetId=sheet_id,

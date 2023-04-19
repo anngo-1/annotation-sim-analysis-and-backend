@@ -4,6 +4,8 @@ from flask_cors import CORS, cross_origin
 from googleapiclient.discovery import build
 import json
 import re
+import numpy as np
+import statistics
 
 #authentification shizzle
 creds = service_account.Credentials.from_service_account_file('credentials.json')
@@ -71,11 +73,11 @@ def update():
 def getsheet():
 
     response_data = request.args
-    sheet_id = get_sheets_id(response_data.get("link"))
+    #sheet_id = get_sheets_id(response_data.get("link"))
     tags_used = response_data.get("tags_used")
 
 
-    #sheet_id ="1kAJU_RGLNfEAkM1E1Zw909iBDDfKJYblH9o2aWpM9lo" # UNCOMMENT THIS IF YOU WANT TO TEST ON OUR TESTING SPREADSHEET
+    sheet_id ="1-eveLZg1SCz2aMkvtxKCTyq1UdAfPglQ0foM1XL9o60" # UNCOMMENT THIS IF YOU WANT TO TEST ON OUR TESTING SPREADSHEET
     range_name = 'Sheet1!A:D'
     response = service.spreadsheets().values().get(
         spreadsheetId=sheet_id,
@@ -90,33 +92,55 @@ def getsheet():
     #values[i][0]  all the names
     # [amanda, an, derrick]
     total_agreement = 0
+    values_transpose = np.array(values).T.tolist()
+    images = sorted(set(values_transpose[1]))
 
-    setthing = set() #all the file names
-    filedictionary = {}
+    total_images = len(images)
 
-    for i in values:
-        setthing.add(i[1]) #--> all names
+    # put the lists of tags into a list of nested lists
+    tag_arrays = [[] for _ in range(total_images)]
+    for i in range(len(values_transpose[2])):
+        index = images.index(values_transpose[1][i])
+        user_image_tags = re.findall(r'"(.*?)"', values_transpose[2][i])
+        tag_arrays[index].append(user_image_tags)
+    # print(tag_array)
 
-    total_images = len(setthing)
-    images_with_total_agreement = []
-    #setthing becomes set of all file names
+    # analyze the data by getting most common tag for each attribute for each image
+    results = []
+    i = 0
+    for arr in tag_arrays:
+        arr_transpose = np.array(arr).T.tolist()
+        print(arr_transpose)
+        s = images[i] + "\n"
+        for lis in arr_transpose:
+            most_freq_tag = statistics.mode(lis)
+            percent = (lis.count(most_freq_tag)/len(lis)) * 100
+            s += most_freq_tag + ": " + str(percent) + "%\n"
+        print(s)
+        results.append(s)
+        i += 1
+    
+    print(results)
 
-    for i in setthing:
-        filedictionary[i] = []
+            
+    # images_with_total_agreement = []
+    
+    # for i in setthing:
+    #     filedictionary[i] = []
        
-    for row in values:
-        filedictionary[row[1]].append(row[2])
+    # for row in values:
+    #     filedictionary[row[1]].append(row[2])
 
-    for key, value in filedictionary.items():
-        if len(set(value)) == 1:
-            total_agreement+=1
-            images_with_total_agreement.append(key)
+    # for key, value in filedictionary.items():
+    #     if len(set(value)) == 1:
+    #         total_agreement+=1
+    #         images_with_total_agreement.append(key)
 
 
     jsonreturn = {
         "tags_used" :tags_used,
-        "agreement_percentage" : (total_agreement/total_images)*100 ,
-        "total_agreement_images": images_with_total_agreement
+        "agreement_by_image" : results,
+        # "total_agreement_images": images_with_total_agreement
 
     }
 

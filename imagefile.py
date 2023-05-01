@@ -1,10 +1,13 @@
 
 class ImageFile:
-    def __init__(self, name, df):
+    def __init__(self, name, all_tags_df):
         self.name = name
-        self.df = df
-        self.total_agreement = None
-        self.per_tag_agreement = None
+        self.all_tags_df = all_tags_df
+        self.agreement_df = None
+        self.total_agreement = 0
 
     def __str__(self):
-        return "Name: " + self.name + "\nDataFrame:\n" + str(self.df) + "\nTotal Agreement: " + str(self.total_agreement) + "Agreement Per Tag: " + str(self.per_tag_agreement)
+        return "Name: " + self.name + "\nDataFrame:\n" + str(self.all_tags_df) 
+
+    def print_agreement(self):
+        return "File: " + self.name + "\nAgreement:\n" + str(self.agreement_df) + "\nTotal Agreement: " + str(self.total_agreement) + "\n\n"

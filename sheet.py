@@ -4,7 +4,7 @@ from flask_cors import CORS, cross_origin
 from googleapiclient.discovery import build
 import json
 import re
-import numpy as np
+# import numpy as np
 # import statistics
 import pandas as pd
 from imagefile import ImageFile
@@ -105,40 +105,55 @@ def getsheet():
     total_images = len(image_names)
     # print(values_df["Tags"])
 
-    df_created = False
+    tag_list = []
     for tag in values_df["Tags"]:
         user_image_tags = re.findall(r'"(.*?)"', tag)
-        if df_created == False:
-            num_tags = range(len(user_image_tags))
-            tag_df = pd.DataFrame(columns = ["Tag {}".format(i) for i in num_tags])
-            df_created = True
-        tag_df.loc[len(tag_df)] = user_image_tags
+        tag_list.append(user_image_tags)
         # print(user_image_tags)
     # print(tag_df)
+
+    num_tags = len(user_image_tags)
+    tag_df = pd.DataFrame(tag_list, columns = ["Tag {}".format(i) for i in range(num_tags)])
+    print(tag_df)
 
     values_df = pd.concat([values_df, tag_df], axis = 1)
     print(values_df)
 
     image_files = list()
     for image in image_names:
-        image_df = values_df.loc[values_df["File Name"] == image, ["Tag {}".format(i) for i in num_tags]]
+        image_df = values_df.loc[values_df["File Name"] == image, ["Tag {}".format(i) for i in range(num_tags)]]
         image_files.append(ImageFile(image, image_df))
         # print(image_df)
         
     for im in image_files:
         # print(im)
-        for column in im.df:
-            print(im.df)
-            # print(im.df[column])
-            agreement = im.df[column].mode()
+        agreement_list = []
+        for column in im.all_tags_df:
+            # print(im.all_tags_df)
+            # print(im.all_tags_df[column])
+            agreed_tags = im.all_tags_df[column].mode().tolist()
 
-            occurences = im.df[column].value_counts()[agreement[0]]
-            percentage = occurences / len(im.df) if occurences > 1 else 0
-            
+            occurences = im.all_tags_df[column].value_counts()[agreed_tags[0]]
+            percentage = (occurences / len(im.all_tags_df)) * 100 if occurences > 1 else 0
+
+            agreement_list.append(tuple((agreed_tags, percentage)))
+            # print(agreed_tags)
+            # print(percentage)
             # im.per_tag_agreement = agreement
+        agreement_df = pd.DataFrame(agreement_list, columns = ["Agreed Tags", "Percentage"])
+        im.agreement_df = agreement_df
+        im.total_agreement = agreement_df["Percentage"].sum() / len(agreement_df)
+        print(im.agreement_df)
+        print(im.total_agreement)
         # print(im)
         
-
+    total_agreement = 0
+    results = []
+    for im in image_files:
+        print(im.print_agreement())
+        total_agreement += im.total_agreement
+    
+    overall_agreement = total_agreement/len(image_files)
 
     # # put the lists of tags into a list of nested lists
     # tag_arrays = [[] for _ in range(total_images)]
@@ -187,7 +202,7 @@ def getsheet():
     jsonreturn = {
         "tags_used" :tags_used,
         "agreement_by_image" : results,
-        # "total_agreement_images": images_with_total_agreement
+        "overall_agreement": overall_agreement
 
     }
 

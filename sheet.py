@@ -4,9 +4,10 @@ from flask_cors import CORS, cross_origin
 from googleapiclient.discovery import build
 import json
 import re
-import numpy as np
-import statistics
-
+# import numpy as np
+# import statistics
+import pandas as pd
+from imagefile import ImageFile
 #authentification shizzle
 creds = service_account.Credentials.from_service_account_file('credentials.json')
 service = build('sheets', 'v4', credentials=creds)
@@ -64,9 +65,10 @@ def update():
     return response
 
 
-
-
-
+#pandas settings
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+pd.set_option('display.max_colwidth', None)
 #ANALYZE SPREADSHEET DATA!!!!!
 @app.route('/sheetstats', methods=['GET'])
 @cross_origin()
@@ -77,7 +79,7 @@ def getsheet():
     tags_used = response_data.get("tags_used")
 
 
-    # sheet_id ="1-eveLZg1SCz2aMkvtxKCTyq1UdAfPglQ0foM1XL9o60" # UNCOMMENT THIS IF YOU WANT TO TEST ON OUR TESTING SPREADSHEET
+    #sheet_id ="1gAZCF9RJ_IJxS8NBxZFDMGJ3PeHxqCCUHtAHe8bXviY" # UNCOMMENT THIS IF YOU WANT TO TEST ON OUR TESTING SPREADSHEET
     range_name = 'Sheet1!A:D'
     response = service.spreadsheets().values().get(
         spreadsheetId=sheet_id,
@@ -87,80 +89,77 @@ def getsheet():
 
     #get sheet values
     values = response.get('values', []) #values is a list of all the rows [values in row1, values in row2, values in row3, etc...]
-    #values[0] is the FIRST ROW
-    #values[0][0] is the NAME of the FIRST ROW
-    #values[i][0]  all the names
-    # [amanda, an, derrick]
+
+    values_df = pd.DataFrame(values, columns = ["Annotator", "File Name", "Tags", "File Num"])
+    image_names = sorted(set(values_df["File Name"]))
+    values_df.sort_values(by="File Name", inplace = True)
+    # print(values_df)
+    # print(images)
+
+    tag_list = []
+    for tag in values_df["Tags"]:
+        user_image_tags = re.findall(r'"(.*?)"', tag)
+        tag_list.append(user_image_tags)
+        # print(user_image_tags)
+    # print(tag_df)
+
+    num_tags = len(user_image_tags)
+    tag_df = pd.DataFrame(tag_list, columns = ["Tag {}".format(i) for i in range(num_tags)])
+    print(tag_df)
+
+    values_df = pd.concat([values_df, tag_df], axis = 1)
+    print(values_df)
+
+    image_files = list()
+    for image in image_names:
+        image_df = values_df.loc[values_df["File Name"] == image, ["Tag {}".format(i) for i in range(num_tags)]]
+        image_files.append(ImageFile(image, image_df))
+        # print(image_df)
+        
+    for im in image_files:
+        # print(im)
+        agreement_list = []
+        for column in im.all_tags_df:
+            # print(im.all_tags_df)
+            # print(im.all_tags_df[column])
+            agreed_tags = im.all_tags_df[column].mode().tolist()
+
+            occurences = im.all_tags_df[column].value_counts()[agreed_tags[0]]
+            percentage = (occurences / len(im.all_tags_df)) * 100 if occurences > 1 else 0
+
+            agreement_list.append(tuple((agreed_tags, percentage)))
+            # print(agreed_tags)
+            # print(percentage)
+            # im.per_tag_agreement = agreement
+        agreement_df = pd.DataFrame(agreement_list, columns = ["Agreed Tags", "Percentage"])
+        im.agreement_df = agreement_df
+        im.total_agreement = agreement_df["Percentage"].sum() / len(agreement_df)
+        print(im.agreement_df)
+        print(im.total_agreement)
+        # print(im)
+        
     total_agreement = 0
-    values_transpose = np.array(values).T.tolist()
-    images = sorted(set(values_transpose[1]))
-
-    total_images = len(images)
-
-    # put the lists of tags into a list of nested lists
-    tag_arrays = [[] for _ in range(total_images)]
-    for i in range(len(values_transpose[2])):
-        index = images.index(values_transpose[1][i])
-        user_image_tags = re.findall(r'"(.*?)"', values_transpose[2][i])
-        tag_arrays[index].append(user_image_tags)
-    # print(tag_array)
-
-    # analyze the data by getting most common tag for each attribute for each image
+   
     results = []
-    i = 0
-    for arr in tag_arrays:
-        arr_transpose = np.array(arr).T.tolist()
-        print(arr_transpose)
-        s = images[i] + "\n"
-        for lis in arr_transpose:
-            most_freq_tag = statistics.mode(lis)
-            percent = (lis.count(most_freq_tag)/len(lis)) * 100
-            s += most_freq_tag + ": " + str(percent) + "%\n"
-        print(s)
-        results.append(s)
-        i += 1
+    for im in image_files:
+        results.append(im.print_agreement())
+        total_agreement += im.total_agreement
     
-    print(results)
+    overall_agreement = total_agreement/len(image_files)
 
-            
-    # images_with_total_agreement = []
     
-    # for i in setthing:
-    #     filedictionary[i] = []
-       
-    # for row in values:
-    #     filedictionary[row[1]].append(row[2])
-
-    # for key, value in filedictionary.items():
-    #     if len(set(value)) == 1:
-    #         total_agreement+=1
-    #         images_with_total_agreement.append(key)
 
 
     jsonreturn = {
         "tags_used" :tags_used,
-        "agreement_by_image" : results,
-        # "total_agreement_images": images_with_total_agreement
+        "agreement/image" : results,
+        "agreement_percentage": overall_agreement
 
     }
 
 
 
     
-  #  [name, file_name, tags_array,file_num]
-    #total_annotator_agreement --> what % of people agree on tags 
-    #total agreement (amount of images ALL annotators got right) / all images
-    #anarray = [] --> all my annotations
-    #amandaarray = [] all annotations
-    #derrickarray = [] all anotations
-
-
-
-    #most_disagreed_upon_image
-    #images with 0 agreements
-
-    #most_agreed_upon_image
-    #
 
 
     return jsonreturn

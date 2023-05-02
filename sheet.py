@@ -8,7 +8,6 @@ import re
 # import statistics
 import pandas as pd
 from imagefile import ImageFile
-
 #authentification shizzle
 creds = service_account.Credentials.from_service_account_file('credentials.json')
 service = build('sheets', 'v4', credentials=creds)
@@ -66,20 +65,21 @@ def update():
     return response
 
 
-
-
-
+#pandas settings
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+pd.set_option('display.max_colwidth', None)
 #ANALYZE SPREADSHEET DATA!!!!!
 @app.route('/sheetstats', methods=['GET'])
 @cross_origin()
 def getsheet():
 
     response_data = request.args
-    # sheet_id = get_sheets_id(response_data.get("link"))
+    sheet_id = get_sheets_id(response_data.get("link"))
     tags_used = response_data.get("tags_used")
 
 
-    sheet_id ="1-eveLZg1SCz2aMkvtxKCTyq1UdAfPglQ0foM1XL9o60" # UNCOMMENT THIS IF YOU WANT TO TEST ON OUR TESTING SPREADSHEET
+    #sheet_id ="1gAZCF9RJ_IJxS8NBxZFDMGJ3PeHxqCCUHtAHe8bXviY" # UNCOMMENT THIS IF YOU WANT TO TEST ON OUR TESTING SPREADSHEET
     range_name = 'Sheet1!A:D'
     response = service.spreadsheets().values().get(
         spreadsheetId=sheet_id,
@@ -89,21 +89,12 @@ def getsheet():
 
     #get sheet values
     values = response.get('values', []) #values is a list of all the rows [values in row1, values in row2, values in row3, etc...]
-    #values[0] is the FIRST ROW
-    #values[0][0] is the NAME of the FIRST ROW
-    #values[i][0]  all the names
-    # [amanda, an, derrick]
 
-    # total_agreement = 0
-    # values_transpose = np.array(values).T.tolist()
     values_df = pd.DataFrame(values, columns = ["Annotator", "File Name", "Tags", "File Num"])
     image_names = sorted(set(values_df["File Name"]))
     values_df.sort_values(by="File Name", inplace = True)
     # print(values_df)
     # print(images)
-
-    total_images = len(image_names)
-    # print(values_df["Tags"])
 
     tag_list = []
     for tag in values_df["Tags"]:
@@ -148,81 +139,27 @@ def getsheet():
         # print(im)
         
     total_agreement = 0
+   
     results = []
     for im in image_files:
-        print(im.print_agreement())
+        results.append(im.print_agreement())
         total_agreement += im.total_agreement
     
     overall_agreement = total_agreement/len(image_files)
 
-    # # put the lists of tags into a list of nested lists
-    # tag_arrays = [[] for _ in range(total_images)]
-    # for i in range(len(values_transpose[2])):
-    #     index = images.index(values_transpose[1][i])
-    #     user_image_tags = re.findall(r'"(.*?)"', values_transpose[2][i])
-    #     tag_arrays[index].append(user_image_tags)
-    # print(tag_arrays)
-
-
-
-    # # analyze the data by getting most common tag for each attribute for each image
-    # results = [[] for _ in range(total_images)]
-    # tags = [[] for _ in range(total_images)]
-    # i = 0
-    # for arr in tag_arrays:
-    #     arr_transpose = np.array(arr).T.tolist()
-    #     file_df = pd.DataFrame(arr_transpose)
-    #     print(file_df)
-    #     print(arr_transpose)
-    #     results[i].append(images[i])
-    #     for lis in arr_transpose:
-    #         most_freq_tag = statistics.mode(lis)
-    #         percent = (lis.count(most_freq_tag)/len(lis)) * 100
-    #         results[i].append(str(percent))
-    #     # print(s)
-    #     # results.append(s)
-    #     i += 1
-
-            
-    # images_with_total_agreement = []
     
-    # for i in setthing:
-    #     filedictionary[i] = []
-       
-    # for row in values:
-    #     filedictionary[row[1]].append(row[2])
-
-    # for key, value in filedictionary.items():
-    #     if len(set(value)) == 1:
-    #         total_agreement+=1
-    #         images_with_total_agreement.append(key)
-    results = 0
 
 
     jsonreturn = {
         "tags_used" :tags_used,
-        "agreement_by_image" : results,
-        "overall_agreement": overall_agreement
+        "agreement/image" : results,
+        "agreement_percentage": overall_agreement
 
     }
 
 
 
     
-  #  [name, file_name, tags_array,file_num]
-    #total_annotator_agreement --> what % of people agree on tags 
-    #total agreement (amount of images ALL annotators got right) / all images
-    #anarray = [] --> all my annotations
-    #amandaarray = [] all annotations
-    #derrickarray = [] all anotations
-
-
-
-    #most_disagreed_upon_image
-    #images with 0 agreements
-
-    #most_agreed_upon_image
-    #
 
 
     return jsonreturn

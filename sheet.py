@@ -79,7 +79,8 @@ def getsheet():
     tags_used = response_data.get("tags_used")
 
 
-    #sheet_id ="1gAZCF9RJ_IJxS8NBxZFDMGJ3PeHxqCCUHtAHe8bXviY" # UNCOMMENT THIS IF YOU WANT TO TEST ON OUR TESTING SPREADSHEET
+    # sheet_id ="1vJwuC8jh6kq9Zrcqm_VzhXGJMvvrkx1OBPD_L-Oo6hw" # UNCOMMENT THIS IF YOU WANT TO TEST ON OUR TESTING SPREADSHEET
+    # sheet_id = "1gAZCF9RJ_IJxS8NBxZFDMGJ3PeHxqCCUHtAHe8bXviY"
     range_name = 'Sheet1!A:D'
     response = service.spreadsheets().values().get(
         spreadsheetId=sheet_id,
@@ -92,7 +93,7 @@ def getsheet():
 
     values_df = pd.DataFrame(values, columns = ["Annotator", "File Name", "Tags", "File Num"])
     image_names = sorted(set(values_df["File Name"]))
-    values_df.sort_values(by="File Name", inplace = True)
+    values_df.sort_values(by="File Name", inplace = True, ignore_index=True)
     # print(values_df)
     # print(images)
 
@@ -107,7 +108,7 @@ def getsheet():
     tag_df = pd.DataFrame(tag_list, columns = ["Tag {}".format(i) for i in range(num_tags)])
     print(tag_df)
 
-    values_df = pd.concat([values_df, tag_df], axis = 1)
+    values_df = pd.concat([values_df, tag_df], axis = 1, join='inner')
     print(values_df)
 
     image_files = list()
@@ -148,8 +149,6 @@ def getsheet():
     overall_agreement = total_agreement/len(image_files)
 
     
-
-
     jsonreturn = {
         "tags_used" :tags_used,
         "agreement/image" : results,

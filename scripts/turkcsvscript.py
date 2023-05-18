@@ -22,7 +22,7 @@ reference_data = {
 # All of these files are found in the reference folder
 
 #'bridge_region_url' : 'nose_bridge_proj_reference.png', ###
-'flat_bridge_projection_url' : 'projection1.jpg',
+'flat_bridge_projection_url' : 'projection1.jpg.png',
 'medium_bridge_projection_url' : 'projection2.jpg.png',
 'tall_bridge_projection_url' : 'projection3.jpg.png',
 
@@ -32,9 +32,9 @@ reference_data = {
 'tall_tip_projection_url' : 'talltip.png',
 
 #'bridge_style_url' : 'bridge_style.png', ###
-'bridge_style_upturned_url' : '17594.jpg',
-'bridge_style_straight_url' : '10214.jpg',
-'bridge_style_downturned_url' : '20395.jpg',
+'bridge_style_upturned_url' : 'BRIDGE_STYLE_UPTURNED_REF.png',
+'bridge_style_straight_url' : 'BRIDGE_STYLE_STRAIGHT_REF.png',
+'bridge_style_downturned_url' : 'BRIDGE_STYLE_DOWNTURN_REF.png',
 
 #'tip_style_url' : 'tip_style_reference.png',
 'tip_style_upturned_url' : '17603.jpg', ###
@@ -42,12 +42,14 @@ reference_data = {
 'tip_style_downturned_url' : '5036.jpg',
 
 #'width_region_url' : 'real_width_reference.png', ###
-'width_narrow_url' : '31333.jpg',
-'width_medium_url' : '38514.jpg',
-'width_wide_url' : '10804.jpg',
+'width_narrow_url' : 'NARROW_WIDTH.jpg',
+'width_medium_url' : 'MEDIUM_WIDTH.jpg',
+'width_wide_url' : 'WIDTH_WIDTH.jpg',
 
 'nasal_hump_url' : 'nasalhumpyes.jpg', ###
 'no_nasal_hump_url' : '10214.jpg',
+
+
 }
 
 sheet_data = [] # Used to hold all the data
